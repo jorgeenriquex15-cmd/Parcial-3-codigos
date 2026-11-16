@@ -1,0 +1,178 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.mycompany.sistemainventarioo;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.util.List;
+
+public class Main extends JFrame {
+    private InventarioTienda inventario;
+
+    private JTextField txtCodigo, txtNombre, txtCategoria, txtPrecio, txtStock;
+    private JTextField txtBuscarCodigo, txtNuevoStock;
+    private JTable tablaProductos;
+    private DefaultTableModel modeloTabla;
+
+    public Main() {
+        inventario = new InventarioTienda();
+
+        setTitle("SISTEMA DE INVENTARIO - TIENDA DE TECNOLOGÍA");
+        setSize(850, 650);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout(10, 10));
+
+        JPanel panelControles = new JPanel(new GridLayout(1, 2, 10, 10));
+        panelControles.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JPanel panelRegistro = new JPanel(new GridLayout(6, 2, 5, 5));
+        panelRegistro.setBorder(BorderFactory.createTitledBorder("REGISTRO DE PRODUCTOS"));
+        panelRegistro.add(new JLabel("Código:"));
+        txtCodigo = new JTextField();
+        panelRegistro.add(txtCodigo);
+        
+        panelRegistro.add(new JLabel("Nombre:"));
+        txtNombre = new JTextField();
+        panelRegistro.add(txtNombre);
+        
+        panelRegistro.add(new JLabel("Categoría:"));
+        txtCategoria = new JTextField();
+        panelRegistro.add(txtCategoria);
+        
+        panelRegistro.add(new JLabel("Precio:"));
+        txtPrecio = new JTextField();
+        panelRegistro.add(txtPrecio);
+        
+        panelRegistro.add(new JLabel("Stock:"));
+        txtStock = new JTextField();
+        panelRegistro.add(txtStock);
+
+        JButton btnRegistrar = new JButton("REGISTRAR PRODUCTO");
+        panelRegistro.add(btnRegistrar);
+        panelControles.add(panelRegistro);
+
+        JPanel panelOperaciones = new JPanel(new GridLayout(5, 1, 5, 5));
+        panelOperaciones.setBorder(BorderFactory.createTitledBorder("CONSULTAR Y ACTUALIZAR"));
+        
+        panelOperaciones.add(new JLabel("Código del producto (Buscar):"));
+        txtBuscarCodigo = new JTextField();
+        panelOperaciones.add(txtBuscarCodigo);
+        JButton btnBuscar = new JButton("BUSCAR PRODUCTO");
+        panelOperaciones.add(btnBuscar);
+
+        panelOperaciones.add(new JLabel("Nuevo stock:"));
+        txtNuevoStock = new JTextField();
+        panelOperaciones.add(txtNuevoStock);
+        JButton btnActualizar = new JButton("ACTUALIZAR STOCK");
+        panelOperaciones.add(btnActualizar);
+
+        panelControles.add(panelOperaciones);
+        add(panelControles, BorderLayout.NORTH);
+
+        JPanel panelTabla = new JPanel(new BorderLayout());
+        panelTabla.setBorder(BorderFactory.createTitledBorder("PRODUCTOS REGISTRADOS"));
+        
+        modeloTabla = new DefaultTableModel(new String[]{"Código", "Nombre", "Categoría", "Precio", "Stock"}, 0);
+        tablaProductos = new JTable(modeloTabla);
+        panelTabla.add(new JScrollPane(tablaProductos), BorderLayout.CENTER);
+
+        JButton btnListar = new JButton("LISTAR PRODUCTOS ORDENADOS");
+        panelTabla.add(btnListar, BorderLayout.SOUTH);
+
+        add(panelTabla, BorderLayout.CENTER);
+
+        btnRegistrar.addActionListener(e -> {
+            try {
+                String codigo = txtCodigo.getText().trim();
+                String nombre = txtNombre.getText().trim();
+                String categoria = txtCategoria.getText().trim();
+                double precio = Double.parseDouble(txtPrecio.getText().trim());
+                int stock = Integer.parseInt(txtStock.getText().trim());
+
+                if (codigo.isEmpty() || nombre.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Complete todos los campos obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                Producto p = new Producto(codigo, nombre, categoria, precio, stock);
+                boolean exito = inventario.registrarProducto(p);
+
+                if (exito) {
+                    JOptionPane.showMessageDialog(this, "Producto registrado exitosamente.");
+                    limpiarCamposRegistro();
+                    actualizarTabla(inventario.obtenerProductosOrdenados());
+                } else {
+                    JOptionPane.showMessageDialog(this, "El código del producto ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Ingrese valores numéricos válidos en Precio y Stock.", "Formato incorrecto", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        btnBuscar.addActionListener(e -> {
+            String codigo = txtBuscarCodigo.getText().trim();
+            Producto p = inventario.buscarProducto(codigo);
+            if (p != null) {
+                JOptionPane.showMessageDialog(this, "Producto encontrado:\n" + p.toString(), "Resultado de Búsqueda", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "No se encontró un registro con el código: " + codigo, "No encontrado", JOptionPane.WARNING_MESSAGE);
+            }
+        });
+
+        btnActualizar.addActionListener(e -> {
+            try {
+                String codigo = txtBuscarCodigo.getText().trim();
+                int nuevoStock = Integer.parseInt(txtNuevoStock.getText().trim());
+
+                boolean exito = inventario.actualizarStock(codigo, nuevoStock);
+                if (exito) {
+                    JOptionPane.showMessageDialog(this, "Stock actualizado correctamente.");
+                    txtNuevoStock.setText("");
+                    actualizarTabla(inventario.obtenerProductosOrdenados());
+                } else {
+                    JOptionPane.showMessageDialog(this, "No se pudo actualizar. Verifique el código o la cantidad.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Ingrese un número de stock válido.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        btnListar.addActionListener(e -> {
+            List<Producto> lista = inventario.obtenerProductosOrdenados();
+            actualizarTabla(lista);
+        });
+    }
+
+    private void limpiarCamposRegistro() {
+        txtCodigo.setText("");
+        txtNombre.setText("");
+        txtCategoria.setText("");
+        txtPrecio.setText("");
+        txtStock.setText("");
+    }
+
+    private void actualizarTabla(List<Producto> lista) {
+        modeloTabla.setRowCount(0); 
+        if (lista != null) {
+            for (Producto p : lista) {
+                modeloTabla.addRow(new Object[]{
+                    p.getCodigo(),
+                    p.getNombre(),
+                    p.getCategoria(),
+                    p.getPrecio(),
+                    p.getStock()
+                });
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            new Main().setVisible(true);
+        });
+    }
+}
