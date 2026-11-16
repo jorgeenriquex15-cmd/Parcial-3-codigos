@@ -1,0 +1,44 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.mycompany.sistemainventarioo;
+
+import java.util.HashMap;
+import java.util.List;
+
+public class InventarioTienda {
+    private HashMap<String, Producto> productosPorCodigo;
+    private ArbolProductos arbolProductos;
+
+    public InventarioTienda() {
+        this.productosPorCodigo = new HashMap<>();
+        this.arbolProductos = new ArbolProductos();
+    }
+
+    public boolean registrarProducto(Producto producto) {
+        if (productosPorCodigo.containsKey(producto.getCodigo())) {
+            return false; 
+        }
+        productosPorCodigo.put(producto.getCodigo(), producto);
+        arbolProductos.insertar(producto);
+        return true;
+    }
+
+    public Producto buscarProducto(String codigo) {
+        return productosPorCodigo.get(codigo);
+    }
+
+    public boolean actualizarStock(String codigo, int nuevoStock) {
+        Producto producto = productosPorCodigo.get(codigo);
+        if (producto != null && nuevoStock >= 0) {
+            producto.setStock(nuevoStock);
+            return true;
+        }
+        return false;
+    }
+
+    public List<Producto> obtenerProductosOrdenados() {
+        return arbolProductos.inorden();
+    }
+}
